@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Workout Planner</title>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<style>
+body { font-family: Arial, sans-serif; margin: 20px; background: #f2f2f2; }
+h1 { text-align: center; }
+label { display: block; margin-top: 10px; }
+input, select, button { width: 100%; padding: 10px; margin-top: 5px; }
+button { cursor: pointer; }
+#workoutPlan { margin-top: 20px; background: white; padding: 20px; border-radius: 8px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+
+<h1>AI Workout Planner</h1>
+
+<label for="muscles">Target Muscles (comma separated)</label>
+<input type="text" id="muscles" placeholder="e.g., chest, legs, back">
+
+<label for="goal">Goal</label>
+<select id="goal">
+  <option value="strength">Strength</option>
+  <option value="hypertrophy">Hypertrophy</option>
+  <option value="endurance">Endurance</option>
+  <option value="fat loss">Fat Loss</option>
+</select>
+
+<label for="days">Days per Week</label>
+<input type="number" id="days" min="1" max="7" value="4">
+
+<label for="equipment">Available Equipment (optional)</label>
+<input type="text" id="equipment" placeholder="e.g., dumbbells, barbell, machines">
+
+<button onclick="generateWorkout()">Generate AI Workout</button>
+<button onclick="printWorkout()">Print Workout</button>
+
+<div id="workoutPlan"></div>
+
+<script>
+async function generateWorkout() {
+    const muscles = document.getElementById("muscles").value.trim();
+    const goal = document.getElementById("goal").value;
+    const days = document.getElementById("days").value;
+    const equipment = document.getElementById("equipment").value.trim();
+
+    if (!muscles) {
+        alert("Please enter at least one muscle group.");
+        return;
+    }
+
+    const workoutPlanDiv = document.getElementById("workoutPlan");
+    workoutPlanDiv.innerHTML = "<p>Generating workout... please wait.</p>";
+
+    const prompt = `
+Create a ${days}-day workout plan for someone whose goal is ${goal}, targeting the following muscles: ${muscles}.
+Include exercises (using ${equipment || "any equipment"}), sets, reps, rest times, and short descriptions.
+Format it clearly for display and printing.
+    `;
+
+    try {
+        const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+            model: "gpt-5-mini",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.7
+        }, {
+            headers: {
+                'Authorization': 'Bearer YOUR_OPENAI_API_KEY',
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const aiText = response.data.choices[0].message.content;
+        workoutPlanDiv.innerHTML = aiText;
+
+    } catch (error) {
+        console.error(error);
+        workoutPlanDiv.innerHTML = "<p>Error generating workout. Check console for details.</p>";
+    }
+}
+
+function printWorkout() {
+    const printContents = document.getElementById("workoutPlan").innerHTML;
+    const originalContents = document.body.innerHTML;
+    document.body.innerHTML = printContents;
+    window.print();
+    document.body.innerHTML = originalContents;
+}
+</script>
+
+</body>
+</html>
